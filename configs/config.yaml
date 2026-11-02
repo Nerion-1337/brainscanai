@@ -1,0 +1,74 @@
+# Configuration centrale du projet BrainScanAI
+seed: 42
+
+paths:
+  raw_labeled: data/raw/labeled        # sous-dossiers = noms de classes
+  raw_unlabeled: data/raw/unlabeled
+  processed: data/processed
+  features: data/features
+  figures: reports/figures
+  tables: reports/tables
+
+data:
+  classes: [normal, cancer]            # index 0 = normal, index 1 = cancer (classe positive)
+  extensions: [.jpg, .jpeg, .png]
+  image_size: 224                      # taille d'entrée du backbone (originales : 512x512)
+  test_size: 0.30                      # part des images labellisées réservée au test
+  quality:
+    outlier_robust_z: 4.0              # |z robuste| (MAD) au-delà duquel une image est signalée
+    drop_unlabeled_outliers: true      # on ne supprime JAMAIS une image labellisée
+    drop_duplicates: true
+
+features:
+  backbone: resnet50
+  pretrained: true                     # false = poids aléatoires (tests hors-ligne)
+  layer: avgpool                       # avgpool | layer3 (features plus bas niveau)
+  batch_size: 32
+  num_workers: 0
+  device: auto                         # auto | cpu | cuda | mps
+
+clustering:
+  n_clusters: 2                        # = nombre de classes du jeu labellisé
+  pca_components: 0.95                 # variance expliquée conservée (ou entier)
+  tsne_perplexity: 30
+  dbscan_min_samples: 5
+  selected_method: kmeans              # méthode utilisée pour la labellisation faible
+  keep_fraction: 0.8                   # part des pseudo-labels les plus confiants conservée
+
+semi_supervised:
+  n_repeats: 5                         # répétitions (splits/seed différents) -> moyenne ± écart-type
+  cnn:
+    arch: resnet18
+    pretrained: true
+    batch_size: 32
+    weak_stage: {epochs: 5, lr: 1.0e-4}
+    strong_stage: {epochs: 15, lr: 3.0e-5}
+    baseline: {epochs: 15, lr: 1.0e-4}
+    weight_decay: 1.0e-4
+    val_fraction: 0.2
+    patience: 4
+  sklearn:
+    self_training_threshold: 0.90
+    label_spreading: {kernel: knn, n_neighbors: 7, alpha: 0.2}
+  metrics:
+    primary: recall_cancer             # le faux négatif (tumeur manquée) est l'erreur la plus coûteuse
+    min_recall_target: 0.95
+
+scale_up:
+  n_images: 4000000
+  budget_eur: 5000
+  pilot_images: 1500
+  pilot_budget_eur: 300
+  # --- HYPOTHÈSES À REMPLACER par des devis réels ---
+  gpu_eur_per_hour: 0.80
+  throughput_img_s: 400
+  avg_image_mb: 0.12
+  storage_eur_per_gb_month: 0.02
+  storage_months: 2
+  cpu_preprocessing_eur_per_hour: 0.40
+  cpu_throughput_img_s: 300
+  expert_review_eur_per_image: 3.0
+  active_learning_images: 1000
+  retraining_rounds: 3
+  engineering_overhead_pct: 0.15
+  contingency_pct: 0.20
