@@ -1,0 +1,23 @@
+# Données (jamais versionnées : sensibles, volumineuses)
+data/raw/**/*.jpg
+data/raw/**/*.jpeg
+data/raw/**/*.png
+data/processed/*
+data/features/*
+!data/**/.gitkeep
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.env
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+# Modèles / sorties lourdes
+*.pt
+*.pth
+reports/figures/*
+reports/tables/*
+!reports/**/.gitkeep
+.DS_Store
