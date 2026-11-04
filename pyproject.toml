@@ -9,6 +9,32 @@ description = "Exploration semi-supervisée d'IRM cérébrales (projet BrainScan
 requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scipy>=1.11",
+    "scikit-learn>=1.4",
+    "pillow>=10.0",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "plotly>=5.18",
+    "pyyaml>=6.0",
+    "tqdm>=4.66",
+    "torch>=2.2",
+    "torchvision>=0.17",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+    "nbformat>=5.9",
+    "nbstripout>=0.7",
+]
+notebooks = [
+    "jupyterlab>=4.0",
+    "ipykernel>=6.29",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

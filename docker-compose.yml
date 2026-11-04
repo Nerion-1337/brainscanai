@@ -1,0 +1,74 @@
+# Usage : docker compose run --rm <service>
+# Exemple complet : docker compose run --rm inspect && docker compose run --rm features && ...
+x-app: &app
+  build:
+    context: .
+    target: runtime
+    args:
+      TORCH_VARIANT: ${TORCH_VARIANT:-cpu}
+  image: brainscanai:latest
+  volumes:
+    - ./data:/app/data
+    - ./reports:/app/reports
+    - ./configs:/app/configs:ro
+  environment:
+    TORCH_HOME: /app/data/.torch_cache   # poids ImageNet mis en cache hors image
+
+services:
+  inspect:
+    <<: *app
+    command: python scripts/inspect_data.py
+  features:
+    <<: *app
+    command: python scripts/extract_features.py
+  cluster:
+    <<: *app
+    command: python scripts/run_clustering.py
+  semi:
+    <<: *app
+    command: python scripts/run_semi_supervised.py
+  scaleup:
+    <<: *app
+    command: python scripts/estimate_scale_up.py
+  demo-data:
+    <<: *app
+    command: python scripts/make_demo_data.py
+
+  test:
+    build:
+      context: .
+      target: dev
+    image: brainscanai:dev
+    command: sh -c "ruff check src tests scripts && pytest"
+
+  jupyter:
+    build:
+      context: .
+      target: dev
+    image: brainscanai:dev
+    command: jupyter lab --ip=0.0.0.0 --no-browser --ServerApp.token=''
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+
+  # Profil GPU : docker compose --profile gpu run --rm features-gpu  (nécessite NVIDIA Container Toolkit)
+  features-gpu:
+    profiles: [gpu]
+    build:
+      context: .
+      target: runtime
+      args:
+        TORCH_VARIANT: cu121
+    image: brainscanai:gpu
+    command: python scripts/extract_features.py
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

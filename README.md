@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://skillicons.dev/icons?i=python,pytorch,sklearn,numpy,pandas,jupyter,git,github,githubactions,vscode&perline=10" alt="Stack technique" />
+  <img src="https://skillicons.dev/icons?i=python,pytorch,sklearn,numpy,pandas,jupyter,docker,git,github,githubactions,vscode&perline=11" alt="Stack technique" />
 </p>
 
 <p align="center">
@@ -13,6 +13,8 @@
   <img alt="Seaborn" src="https://img.shields.io/badge/Seaborn-4C72B0?style=for-the-badge&logo=python&logoColor=white" />
   <img alt="SciPy" src="https://img.shields.io/badge/SciPy-8CAAE6?style=for-the-badge&logo=scipy&logoColor=white" />
   <img alt="Pillow" src="https://img.shields.io/badge/Pillow-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img alt="uv" src="https://img.shields.io/badge/uv-package%20manager-DE5FE9?style=for-the-badge&logo=uv&logoColor=white" />
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
   <img alt="GitHub Actions" src="https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
   <img alt="Licence" src="https://img.shields.io/badge/Licence-MIT-green?style=for-the-badge" />
 </p>
@@ -32,7 +34,7 @@
 4. [Pipeline et méthodologie](#-pipeline-et-méthodologie)
 5. [Diagrammes UML](#-diagrammes-uml)
 6. [Stratégie Git / GitHub](#-stratégie-git--github)
-7. [Installation et utilisation](#-installation-et-utilisation)
+7. [Installation et utilisation (uv)](#️-installation-et-utilisation-uv) · [Docker](#-docker)
 8. [Métriques et definition of done](#-métriques-et-definition-of-done)
 9. [Passage à l'échelle](#-passage-à-léchelle-4-m-dimages--5-000-eur)
 10. [Résultats](#-résultats)
@@ -76,12 +78,16 @@ data/raw/
 brainscanai/
 ├── README.md
 ├── LICENSE
-├── Makefile                      # raccourcis : make inspect | features | cluster | semi | scaleup | test
-├── pyproject.toml                # package installable + ruff + pytest
-├── requirements.txt / requirements-dev.txt
+├── Makefile                      # raccourcis : make install | inspect | features | cluster | semi | scaleup | test | docker-*
+├── pyproject.toml                # dépendances, groupes dev/notebooks (uv), ruff, pytest
+├── uv.lock                       # versions verrouillées (reproductibilité)
+├── .python-version               # version de Python utilisée par uv
+├── Dockerfile                    # multi-stage : deps → runtime / dev, torch CPU ou CUDA
+├── docker-compose.yml            # un service par étape + test + jupyter + profil GPU
+├── .dockerignore
 ├── .gitignore                    # données et poids jamais versionnés
 ├── .github/
-│   ├── workflows/ci.yml          # lint + tests + validation des notebooks
+│   ├── workflows/ci.yml          # uv : lint + tests + notebooks, puis build Docker
 │   └── pull_request_template.md
 ├── configs/
 │   └── config.yaml               # chemins, backbone, clustering, CNN, budget (source unique de vérité)
@@ -403,7 +409,8 @@ Git Flow allégé : une branche `feature/*` par étape, PR vers `develop`, versi
 | `feature/04-semi-supervised` | 4 | Métriques, méthodes sklearn, CNN faible→fort, notebook 04 |
 | `feature/05-scale-up` | Échelle | Modèle de coûts 4 M images / 5 000 EUR |
 | `feature/06-docs-presentation` | Livrables | Docs, auto-évaluation, plan de soutenance, README |
-| `release/v1.0.0` → `main` | Release | Tag `v1.0.0` |
+| `feature/07-docker-uv` | Industrialisation | uv (`uv.lock`), Dockerfile multi-stage, docker-compose, CI mise à jour |
+| `release/v1.0.0`, `release/v1.1.0` → `main` | Release | Tags `v1.0.0`, `v1.1.0` |
 
 ```mermaid
 gitGraph
@@ -443,14 +450,26 @@ gitGraph
     commit id: "chore: release 1.0.0"
     checkout main
     merge "release/v1.0.0" tag: "v1.0.0"
+    checkout develop
+    merge "release/v1.0.0"
+    branch "feature/07-docker-uv"
+    commit id: "feat: uv + Docker + CI"
+    checkout develop
+    merge "feature/07-docker-uv"
+    branch "release/v1.1.0"
+    commit id: "chore: release 1.1.0"
+    checkout main
+    merge "release/v1.1.0" tag: "v1.1.0"
 ```
 
-## ⚙️ Installation et utilisation
+## ⚙️ Installation et utilisation (uv)
+
+[uv](https://docs.astral.sh/uv/) gère Python, l'environnement virtuel et les dépendances à partir de `pyproject.toml` et de `uv.lock` (versions figées).
 
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh     # installer uv (une fois)
 git clone <votre-repo>.git && cd brainscanai
-python -m venv .venv && source .venv/bin/activate
-make install                          # dépendances + package en mode éditable
+make install                          # = uv sync --group dev --group notebooks (crée .venv)
 
 # 1) placer le jeu dans data/raw/ (voir arborescence) - OU générer un jeu de démo synthétique
 make demo-data
@@ -459,12 +478,48 @@ make inspect                          # étape 1 : qualité + manifeste nettoyé
 make features                         # étape 2 : embeddings (poids ImageNet téléchargés au 1er lancement)
 make cluster                          # étape 3 : clustering + ARI + figures
 make semi                             # étape 4 : comparaison supervisé / semi-supervisé (CNN inclus)
-python scripts/run_semi_supervised.py --skip-cnn   # version rapide sans GPU
+uv run python scripts/run_semi_supervised.py --skip-cnn   # version rapide sans GPU
 make scaleup                          # étape 5 : budget 4 M images
+
+uv run jupyter lab                    # notebooks interactifs
+uv add <paquet>                       # ajouter une dépendance (met à jour pyproject.toml + uv.lock)
 ```
 
-Test hors-ligne sans poids pré-entraînés : `python scripts/extract_features.py --no-pretrained` (embeddings non pertinents, pipeline seul).
-Les notebooks `notebooks/*.ipynb` suivent les mêmes étapes de façon interactive (`jupyter lab`). Tous les paramètres sont dans `configs/config.yaml`.
+Test hors-ligne sans poids pré-entraînés : `uv run python scripts/extract_features.py --no-pretrained` (embeddings non pertinents, vérifie seulement le pipeline). Tous les paramètres sont dans `configs/config.yaml`.
+
+## 🐳 Docker
+
+Image **multi-stage** : `deps` (uv + dépendances verrouillées, cache de couches) → `runtime` (exécution, utilisateur non-root) ou `dev` (pytest, ruff, jupyter). PyTorch est installé depuis l'index officiel : **CPU par défaut** (image légère), **CUDA** via `TORCH_VARIANT`. Données et résultats sont des **volumes** montés, jamais copiés dans l'image.
+
+```bash
+make demo-data                                  # ou placer le vrai jeu dans data/raw/
+docker compose run --rm inspect                 # étape 1
+docker compose run --rm features                # étape 2
+docker compose run --rm cluster                 # étape 3
+docker compose run --rm semi                    # étape 4
+docker compose run --rm scaleup                 # étape 5      (ou : make docker-all)
+
+docker compose run --rm test                    # ruff + pytest dans le conteneur
+docker compose up jupyter                       # JupyterLab sur http://localhost:8888
+
+# GPU (NVIDIA Container Toolkit requis)
+TORCH_VARIANT=cu121 docker compose build inspect
+docker compose --profile gpu run --rm features-gpu
+```
+
+```mermaid
+flowchart LR
+    subgraph IMG[Image Docker multi-stage]
+        B[base<br/>python-slim + uv] --> D[deps<br/>uv sync --frozen<br/>+ torch cpu/cuda]
+        D --> R[runtime<br/>src, scripts, configs<br/>user non-root]
+        D --> V[dev<br/>pytest, ruff, jupyter]
+    end
+    LOCK[(pyproject.toml<br/>uv.lock)] --> D
+    HOSTD[(./data)] -. volume .-> R
+    HOSTR[(./reports)] -. volume .-> R
+    R --> OUT[Embeddings, tables,<br/>figures]
+    V --> CI[CI GitHub Actions<br/>build + tests]
+```
 
 ## 📏 Métriques et definition of done
 
@@ -502,10 +557,10 @@ L'accuracy est rapportée mais **jamais** utilisée seule. Le seuil de décision
 ## ✅ Tests et qualité
 
 ```bash
-make test    # pytest : qualité/doublons, split anti-fuite, clustering, mapping, métriques, coûts, pipeline embeddings
+make test    # (uv run pytest) pytest : qualité/doublons, split anti-fuite, clustering, mapping, métriques, coûts, pipeline embeddings
 make lint    # ruff
 ```
-La CI GitHub Actions exécute lint + tests + validation des notebooks (sans sorties) à chaque push/PR. Les tests PyTorch sont ignorés automatiquement si `torch` n'est pas installé.
+La CI GitHub Actions (uv, `--frozen`) exécute lint + tests + validation des notebooks (sans sorties), puis construit l'image Docker, à chaque push/PR. Les tests PyTorch sont ignorés automatiquement si `torch` n'est pas installé.
 
 ## 🚧 Limites et suites
 
