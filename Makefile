@@ -1,35 +1,49 @@
-.PHONY: install demo-data inspect features cluster semi scaleup test lint all clean
+.PHONY: install install-torch demo-data inspect features cluster semi scaleup test lint all clean docker-build docker-test docker-all lock
 
-PY ?= python
+RUN ?= uv run
 
-install:
-	$(PY) -m pip install -r requirements-dev.txt && $(PY) -m pip install -e .
+install:              ## environnement verrouillé via uv (Python + dépendances + dev)
+	uv sync --group dev --group notebooks
+
+lock:                 ## régénérer uv.lock après modification de pyproject.toml
+	uv lock
 
 demo-data:            ## images synthétiques pour tester sans le vrai dataset
-	$(PY) scripts/make_demo_data.py
+	$(RUN) python scripts/make_demo_data.py
 
 inspect:              ## étape 1 : exploration & qualité
-	$(PY) scripts/inspect_data.py
+	$(RUN) python scripts/inspect_data.py
 
 features:             ## étape 2 : embeddings ResNet
-	$(PY) scripts/extract_features.py
+	$(RUN) python scripts/extract_features.py
 
 cluster:              ## étape 3 : clustering non supervisé
-	$(PY) scripts/run_clustering.py
+	$(RUN) python scripts/run_clustering.py
 
 semi:                 ## étape 4 : semi-supervisé (CNN + sklearn)
-	$(PY) scripts/run_semi_supervised.py
+	$(RUN) python scripts/run_semi_supervised.py
 
 scaleup:              ## étape 5 : faisabilité 4 M d'images / 5 000 EUR
-	$(PY) scripts/estimate_scale_up.py
+	$(RUN) python scripts/estimate_scale_up.py
 
 test:
-	pytest
+	$(RUN) pytest
 
 lint:
-	ruff check src tests scripts
+	$(RUN) ruff check src tests scripts
 
 all: inspect features cluster semi scaleup
 
 clean:
 	rm -rf data/processed/* data/features/* reports/figures/* reports/tables/*
+
+# ---- Docker
+docker-build:         ## image d'exécution (CPU) ; GPU : make docker-build TORCH_VARIANT=cu121
+	docker compose build --build-arg TORCH_VARIANT=$${TORCH_VARIANT:-cpu} inspect
+
+docker-test:
+	docker compose run --rm test
+
+docker-all:
+	docker compose run --rm inspect && docker compose run --rm features && \
+	docker compose run --rm cluster && docker compose run --rm semi && docker compose run --rm scaleup
