@@ -1,7 +1,7 @@
 # Definition of done (objectif atteint)
 
 ## Technique
-1. Pipeline reproductible de bout en bout (`make all`) à partir d'une config unique et d'une graine fixée.
+1. Pipeline reproductible de bout en bout (`docker compose run --rm pipeline`) à partir d'une config unique et d'une graine fixée.
 2. Embeddings sauvegardés, alignés avec le manifeste, sans NaN/Inf.
 3. ≥ 3 algorithmes de clustering comparés (ARI, NMI, silhouette, pureté) ; ARI discuté même s'il est modeste.
 4. ≥ 3 approches semi-supervisées comparées au supervisé seul, **5 répétitions**, moyenne ± écart-type.
