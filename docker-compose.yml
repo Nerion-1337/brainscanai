@@ -30,6 +30,14 @@ services:
   scaleup:
     <<: *app
     command: python scripts/estimate_scale_up.py
+  pipeline:                      # tout enchaîner : qualité -> features -> clustering -> semi-sup. -> budget
+    <<: *app
+    command: >
+      sh -c "python scripts/inspect_data.py &&
+             python scripts/extract_features.py &&
+             python scripts/run_clustering.py &&
+             python scripts/run_semi_supervised.py &&
+             python scripts/estimate_scale_up.py"
   demo-data:
     <<: *app
     command: python scripts/make_demo_data.py

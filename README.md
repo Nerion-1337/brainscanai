@@ -34,7 +34,7 @@
 4. [Pipeline et méthodologie](#-pipeline-et-méthodologie)
 5. [Diagrammes UML](#-diagrammes-uml)
 6. [Stratégie Git / GitHub](#-stratégie-git--github)
-7. [Installation et utilisation (uv)](#️-installation-et-utilisation-uv) · [Docker](#-docker)
+7. [Installation et exécution (Docker uniquement)](#-installation-et-exécution-docker-uniquement)
 8. [Métriques et definition of done](#-métriques-et-definition-of-done)
 9. [Passage à l'échelle](#-passage-à-léchelle-4-m-dimages--5-000-eur)
 10. [Résultats](#-résultats)
@@ -70,7 +70,7 @@ data/raw/
 └── unlabeled/    *.jpg
 ```
 
-> 📝 L'énoncé de la mission évoque du PNG + métadonnées, le descriptif du jeu annonce du JPEG : le notebook 01 **vérifie** format, résolution et canaux. Sans le vrai jeu, `make demo-data` génère des images **synthétiques** (smoke test uniquement).
+> 📝 L'énoncé de la mission évoque du PNG + métadonnées, le descriptif du jeu annonce du JPEG : le notebook 01 **vérifie** format, résolution et canaux. Sans le vrai jeu, `docker compose run --rm demo-data` génère des images **synthétiques** (smoke test uniquement).
 
 ## 🏗️ Architecture du projet
 
@@ -78,7 +78,7 @@ data/raw/
 brainscanai/
 ├── README.md
 ├── LICENSE
-├── Makefile                      # raccourcis : make install | inspect | features | cluster | semi | scaleup | test | docker-*
+├── Makefile                      # raccourcis optionnels (dev local / Linux-macOS) ; Docker n'en a pas besoin
 ├── pyproject.toml                # dépendances, groupes dev/notebooks (uv), ruff, pytest
 ├── uv.lock                       # versions verrouillées (reproductibilité)
 ├── .python-version               # version de Python utilisée par uv
@@ -328,7 +328,7 @@ sequenceDiagram
     participant WL as weak_labels
     participant TR as train
     participant MT as metrics
-    DS->>NB: make all
+    DS->>NB: docker compose run --rm pipeline
     NB->>DAT: build_manifest, compute_image_stats
     DAT-->>NB: manifest_clean.csv
     NB->>FE: extract(paths)
@@ -462,50 +462,38 @@ gitGraph
     merge "release/v1.1.0" tag: "v1.1.0"
 ```
 
-## ⚙️ Installation et utilisation (uv)
+## 🐳 Installation et exécution (Docker uniquement)
 
-[uv](https://docs.astral.sh/uv/) gère Python, l'environnement virtuel et les dépendances à partir de `pyproject.toml` et de `uv.lock` (versions figées).
+**Seul Docker est requis** sur votre machine (Windows, macOS ou Linux). **Aucune installation locale de Python, uv, PyTorch ou `make`** : toutes les dépendances (verrouillées par `uv.lock`) sont installées **dans l'image** au premier build.
 
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh     # installer uv (une fois)
-git clone <votre-repo>.git && cd brainscanai
-make install                          # = uv sync --group dev --group notebooks (crée .venv)
+**Prérequis** : [Docker Desktop](https://www.docker.com/products/docker-desktop/) installé et lancé (Windows : backend WSL2).
 
-# 1) placer le jeu dans data/raw/ (voir arborescence) - OU générer un jeu de démo synthétique
-make demo-data
+```powershell
+git clone <votre-repo>.git ; cd brainscanai
 
-make inspect                          # étape 1 : qualité + manifeste nettoyé
-make features                         # étape 2 : embeddings (poids ImageNet téléchargés au 1er lancement)
-make cluster                          # étape 3 : clustering + ARI + figures
-make semi                             # étape 4 : comparaison supervisé / semi-supervisé (CNN inclus)
-uv run python scripts/run_semi_supervised.py --skip-cnn   # version rapide sans GPU
-make scaleup                          # étape 5 : budget 4 M images
+# 1) Données : copier le jeu dans data/raw/ (voir arborescence) - OU générer un jeu synthétique de test
+docker compose run --rm demo-data
 
-uv run jupyter lab                    # notebooks interactifs
-uv add <paquet>                       # ajouter une dépendance (met à jour pyproject.toml + uv.lock)
+# 2) Tout le pipeline en une commande (le 1er lancement construit l'image : plusieurs minutes, PyTorch est lourd)
+docker compose run --rm pipeline
+
+# ... ou étape par étape
+docker compose run --rm inspect       # 1. qualité + nettoyage
+docker compose run --rm features      # 2. embeddings ResNet
+docker compose run --rm cluster       # 3. clustering + ARI + figures
+docker compose run --rm semi          # 4. supervisé vs semi-supervisé (CNN inclus)
+docker compose run --rm scaleup       # 5. budget 4 M d'images
+
+# Tests et notebooks, toujours dans un conteneur
+docker compose run --rm test          # ruff + pytest
+docker compose up jupyter             # JupyterLab -> http://localhost:8888
 ```
 
-Test hors-ligne sans poids pré-entraînés : `uv run python scripts/extract_features.py --no-pretrained` (embeddings non pertinents, vérifie seulement le pipeline). Tous les paramètres sont dans `configs/config.yaml`.
-
-## 🐳 Docker
-
-Image **multi-stage** : `deps` (uv + dépendances verrouillées, cache de couches) → `runtime` (exécution, utilisateur non-root) ou `dev` (pytest, ruff, jupyter). PyTorch est installé depuis l'index officiel : **CPU par défaut** (image légère), **CUDA** via `TORCH_VARIANT`. Données et résultats sont des **volumes** montés, jamais copiés dans l'image.
-
-```bash
-make demo-data                                  # ou placer le vrai jeu dans data/raw/
-docker compose run --rm inspect                 # étape 1
-docker compose run --rm features                # étape 2
-docker compose run --rm cluster                 # étape 3
-docker compose run --rm semi                    # étape 4
-docker compose run --rm scaleup                 # étape 5      (ou : make docker-all)
-
-docker compose run --rm test                    # ruff + pytest dans le conteneur
-docker compose up jupyter                       # JupyterLab sur http://localhost:8888
-
-# GPU (NVIDIA Container Toolkit requis)
-TORCH_VARIANT=cu121 docker compose build inspect
-docker compose --profile gpu run --rm features-gpu
-```
+- Les dossiers `data/` et `reports/` de votre machine sont **montés en volumes** : résultats (`reports/figures`, `reports/tables`) et embeddings apparaissent directement chez vous ; les données ne sont jamais copiées dans l'image. Les poids ImageNet sont mis en cache dans `data/.torch_cache`.
+- Modifier `src/` ou `scripts/` ? Reconstruire : `docker compose build` (le service `jupyter` monte le code en direct).
+- Paramètres : `configs/config.yaml` (monté en lecture seule, pas de rebuild nécessaire).
+- **GPU** (NVIDIA Container Toolkit requis) : `$env:TORCH_VARIANT="cu121"; docker compose build inspect` puis `docker compose --profile gpu run --rm features-gpu` (PowerShell ; sous bash : `TORCH_VARIANT=cu121 docker compose ...`).
+- Test hors-ligne sans poids pré-entraînés : `docker compose run --rm features python scripts/extract_features.py --no-pretrained`.
 
 ```mermaid
 flowchart LR
@@ -520,6 +508,10 @@ flowchart LR
     R --> OUT[Embeddings, tables,<br/>figures]
     V --> CI[CI GitHub Actions<br/>build + tests]
 ```
+
+### Option : développement local sans Docker (facultatif)
+
+Réservé à l'autocomplétion IDE ou au débogage : `uv sync --group dev --group notebooks`, puis `uv run python scripts/<script>.py` (ou `make <cible>` si `make` est disponible). Ce n'est **pas** nécessaire pour exécuter le projet.
 
 ## 📏 Métriques et definition of done
 
@@ -557,8 +549,7 @@ L'accuracy est rapportée mais **jamais** utilisée seule. Le seuil de décision
 ## ✅ Tests et qualité
 
 ```bash
-make test    # (uv run pytest) pytest : qualité/doublons, split anti-fuite, clustering, mapping, métriques, coûts, pipeline embeddings
-make lint    # ruff
+docker compose run --rm test    # ruff + pytest dans le conteneur : qualité/doublons, split anti-fuite, clustering, mapping, métriques, coûts, pipeline embeddings
 ```
 La CI GitHub Actions (uv, `--frozen`) exécute lint + tests + validation des notebooks (sans sorties), puis construit l'image Docker, à chaque push/PR. Les tests PyTorch sont ignorés automatiquement si `torch` n'est pas installé.
 
