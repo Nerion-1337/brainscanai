@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.1.2]
+- Correctif Docker : `uv sync` désinstallait PyTorch (installé hors lockfile) → ajout de `--inexact` et d'un contrôle `import torch` au build.
+
 ## [1.1.1]
 - Docker devient le chemin d'exécution principal (aucun Python/uv/make requis en local) ; service `pipeline` pour tout enchaîner.
 - uv et make restent disponibles en option pour le développement local.

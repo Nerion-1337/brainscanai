@@ -1,3 +1,3 @@
 """BrainScanAI - exploration semi-supervisée d'IRM cérébrales."""
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
