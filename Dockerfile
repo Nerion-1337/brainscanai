@@ -22,6 +22,7 @@ COPY pyproject.toml uv.lock .python-version ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev \
         --no-install-package torch --no-install-package torchvision
+# NB : les `uv sync` suivants utilisent --inexact, sinon uv désinstalle torch (absent d'uv.lock ici)
 # 2) torch/torchvision depuis l'index PyTorch (cpu par défaut : image bien plus légère)
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --python /opt/venv/bin/python torch torchvision \
@@ -35,7 +36,9 @@ COPY configs ./configs
 COPY notebooks ./notebooks
 COPY README.md ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-package torch --no-install-package torchvision
+    uv sync --frozen --inexact --no-dev --no-install-package torch --no-install-package torchvision
+# Garde-fou : le build échoue ici (et non en cours de pipeline) si torch a disparu
+RUN python -c "import torch, torchvision; print('torch', torch.__version__)"
 RUN useradd -m appuser && mkdir -p data reports && chown -R appuser /app
 USER appuser
 # Les données et résultats sont montés en volumes (jamais dans l'image)
@@ -46,7 +49,8 @@ CMD ["python", "scripts/inspect_data.py"]
 FROM deps AS dev
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --group dev --group notebooks \
+    uv sync --frozen --inexact --group dev --group notebooks \
         --no-install-package torch --no-install-package torchvision
+RUN python -c "import torch, torchvision"
 EXPOSE 8888
 CMD ["pytest"]
