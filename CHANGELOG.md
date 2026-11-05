@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.1]
+- Docker devient le chemin d'exécution principal (aucun Python/uv/make requis en local) ; service `pipeline` pour tout enchaîner.
+- uv et make restent disponibles en option pour le développement local.
+
 ## [1.1.0]
 - Gestion des dépendances avec **uv** (`pyproject.toml` + `uv.lock`, `.python-version`) ; suppression des `requirements*.txt`.
 - **Docker** : Dockerfile multi-stage (runtime/dev, torch CPU ou CUDA), `docker-compose.yml` (un service par étape, tests, Jupyter, profil GPU).
