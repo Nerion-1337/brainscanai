@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # Image reproductible : uv (dépendances verrouillées par uv.lock) + PyTorch CPU ou CUDA au choix.
 #   CPU (défaut) : docker build -t brainscanai .
-#   GPU          : docker build --build-arg TORCH_VARIANT=cu121 -t brainscanai:gpu .
+#   NVIDIA       : --build-arg TORCH_VARIANT=cu126   | AMD (Linux) : --build-arg TORCH_VARIANT=rocm7.2
 ARG PYTHON_VERSION=3.12
 
 FROM python:${PYTHON_VERSION}-slim AS base

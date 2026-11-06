@@ -15,6 +15,8 @@
   <img alt="Pillow" src="https://img.shields.io/badge/Pillow-3776AB?style=for-the-badge&logo=python&logoColor=white" />
   <img alt="uv" src="https://img.shields.io/badge/uv-package%20manager-DE5FE9?style=for-the-badge&logo=uv&logoColor=white" />
   <img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+  <img alt="NVIDIA CUDA" src="https://img.shields.io/badge/NVIDIA-CUDA-76B900?style=for-the-badge&logo=nvidia&logoColor=white" />
+  <img alt="AMD ROCm" src="https://img.shields.io/badge/AMD-ROCm-ED1C24?style=for-the-badge&logo=amd&logoColor=white" />
   <img alt="GitHub Actions" src="https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
   <img alt="Licence" src="https://img.shields.io/badge/Licence-MIT-green?style=for-the-badge" />
 </p>
@@ -83,7 +85,9 @@ brainscanai/
 ├── uv.lock                       # versions verrouillées (reproductibilité)
 ├── .python-version               # version de Python utilisée par uv
 ├── Dockerfile                    # multi-stage : deps → runtime / dev, torch CPU ou CUDA
-├── docker-compose.yml            # un service par étape + test + jupyter + profil GPU
+├── docker-compose.yml            # un service par étape + test + jupyter + gpu-check
+├── docker-compose.nvidia.yml     # override GPU NVIDIA (CUDA)
+├── docker-compose.amd.yml        # override GPU AMD (ROCm, Linux natif)
 ├── .dockerignore
 ├── .gitignore                    # données et poids jamais versionnés
 ├── .github/
@@ -105,7 +109,7 @@ brainscanai/
 │   │                    models.py · train.py · cnn_experiment.py
 │   ├── evaluation/      metrics.py · plots.py
 │   └── scale_up/        cost.py
-├── scripts/                      # CLI : inspect_data, extract_features, run_clustering,
+├── scripts/                      # CLI : check_gpu, inspect_data, extract_features, run_clustering,
 │                                 #       run_semi_supervised, estimate_scale_up, make_demo_data,
 │                                 #       build_notebooks, check_notebooks
 ├── tests/                        # pytest (qualité, split anti-fuite, clustering, métriques, coûts)
@@ -492,7 +496,7 @@ docker compose up jupyter             # JupyterLab -> http://localhost:8888
 - Les dossiers `data/` et `reports/` de votre machine sont **montés en volumes** : résultats (`reports/figures`, `reports/tables`) et embeddings apparaissent directement chez vous ; les données ne sont jamais copiées dans l'image. Les poids ImageNet sont mis en cache dans `data/.torch_cache`.
 - Modifier `src/` ou `scripts/` ? Reconstruire : `docker compose build` (le service `jupyter` monte le code en direct).
 - Paramètres : `configs/config.yaml` (monté en lecture seule, pas de rebuild nécessaire).
-- **GPU** (NVIDIA Container Toolkit requis) : `$env:TORCH_VARIANT="cu121"; docker compose build inspect` puis `docker compose --profile gpu run --rm features-gpu` (PowerShell ; sous bash : `TORCH_VARIANT=cu121 docker compose ...`).
+- **GPU (optionnel)** : CPU par défaut. NVIDIA (Windows/Linux) : `docker compose -f docker-compose.yml -f docker-compose.nvidia.yml run --rm pipeline`. AMD (Linux natif, ROCm) : `... -f docker-compose.amd.yml ...`. **AMD sous Windows : pas d'accès GPU via Docker Desktop, utiliser le CPU.** Diagnostic : `docker compose run --rm gpu-check`. Détails et pistes : [docs/gpu.md](docs/gpu.md).
 - Test hors-ligne sans poids pré-entraînés : `docker compose run --rm features python scripts/extract_features.py --no-pretrained`.
 
 ```mermaid
