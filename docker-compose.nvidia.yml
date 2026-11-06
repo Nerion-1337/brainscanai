@@ -1,0 +1,24 @@
+# Accélération NVIDIA (CUDA). Fonctionne sous Windows (Docker Desktop + WSL2 + pilote NVIDIA récent) et Linux
+# (NVIDIA Container Toolkit). Usage :
+#   docker compose -f docker-compose.yml -f docker-compose.nvidia.yml run --rm gpu-check
+#   docker compose -f docker-compose.yml -f docker-compose.nvidia.yml run --rm pipeline
+# Variante CUDA des wheels PyTorch (défaut cu126 ; ex. cu128, cu130) : TORCH_VARIANT=cu128
+x-nvidia: &nvidia
+  build:
+    target: runtime
+    args:
+      TORCH_VARIANT: ${TORCH_VARIANT:-cu126}
+  image: brainscanai:nvidia
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+
+services:
+  gpu-check: *nvidia
+  features: *nvidia
+  semi: *nvidia
+  pipeline: *nvidia
