@@ -57,8 +57,10 @@ services:
       context: .
       target: dev
     image: brainscanai:dev
-    command: jupyter lab --ip=0.0.0.0 --no-browser --ServerApp.token=''
+    # --allow-root : l'image dev s'exécute en root dans le conteneur (Jupyter refuse sinon de démarrer)
+    # Sans mot de passe/jeton, le port n'est donc exposé qu'à VOTRE machine (127.0.0.1), pas au réseau.
+    command: jupyter lab --ip=0.0.0.0 --no-browser --allow-root --IdentityProvider.token='' --ServerApp.root_dir=/app
     ports:
-      - "8888:8888"
+      - "127.0.0.1:8888:8888"
     volumes:
       - .:/app

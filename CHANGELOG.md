@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.2.1]
+- Correctif : le service `jupyter` quittait immédiatement (Jupyter refuse de tourner en root) → `--allow-root`, jeton vide via `IdentityProvider`, port lié à 127.0.0.1.
+
 ## [1.2.0]
 - Accélération GPU multi-constructeurs : override `docker-compose.nvidia.yml` (CUDA) et `docker-compose.amd.yml` (ROCm, Linux natif) ; service `gpu-check`.
 - Retrait de l'ancien service `features-gpu` (variante `cu121` obsolète) ; défaut NVIDIA `cu126`.
