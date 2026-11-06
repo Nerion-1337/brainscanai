@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.0]
+- Accélération GPU multi-constructeurs : override `docker-compose.nvidia.yml` (CUDA) et `docker-compose.amd.yml` (ROCm, Linux natif) ; service `gpu-check`.
+- Retrait de l'ancien service `features-gpu` (variante `cu121` obsolète) ; défaut NVIDIA `cu126`.
+- Documentation `docs/gpu.md` (matrice OS/GPU, AMD sous Windows, accélération CPU).
+
 ## [1.1.2]
 - Correctif Docker : `uv sync` désinstallait PyTorch (installé hors lockfile) → ajout de `--inexact` et d'un contrôle `import torch` au build.
 

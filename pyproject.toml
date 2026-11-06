@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "brainscanai"
-version = "1.1.2"
+version = "1.2.0"
 description = "Exploration semi-supervisée d'IRM cérébrales (projet BrainScanAI - CurelyticsIA)"
 requires-python = ">=3.10"
 readme = "README.md"
