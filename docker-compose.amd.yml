@@ -1,0 +1,31 @@
+# Accélération AMD (ROCm) - HÔTE LINUX NATIF uniquement (accès à /dev/kfd et /dev/dri).
+# Docker Desktop sous Windows ne fournit PAS ces périphériques : voir docs/gpu.md (section AMD sous Windows).
+# Usage :
+#   docker compose -f docker-compose.yml -f docker-compose.amd.yml run --rm gpu-check
+#   docker compose -f docker-compose.yml -f docker-compose.amd.yml run --rm pipeline
+# Variante ROCm des wheels PyTorch (défaut rocm7.2) : TORCH_VARIANT=rocm7.1
+# Groupe « render » : le GID varie selon la distribution -> RENDER_GID=$(getent group render | cut -d: -f3)
+x-amd: &amd
+  build:
+    target: runtime
+    args:
+      TORCH_VARIANT: ${TORCH_VARIANT:-rocm7.2}
+  image: brainscanai:amd
+  devices:
+    - /dev/kfd:/dev/kfd
+    - /dev/dri:/dev/dri
+  group_add:
+    - video
+    - "${RENDER_GID:-109}"
+  ipc: host
+  shm_size: 8g
+  cap_add:
+    - SYS_PTRACE
+  security_opt:
+    - seccomp:unconfined
+
+services:
+  gpu-check: *amd
+  features: *amd
+  semi: *amd
+  pipeline: *amd

@@ -38,6 +38,9 @@ services:
              python scripts/run_clustering.py &&
              python scripts/run_semi_supervised.py &&
              python scripts/estimate_scale_up.py"
+  gpu-check:                     # diagnostic : CPU / NVIDIA / AMD vu par PyTorch
+    <<: *app
+    command: python scripts/check_gpu.py
   demo-data:
     <<: *app
     command: python scripts/make_demo_data.py
@@ -59,24 +62,3 @@ services:
       - "8888:8888"
     volumes:
       - .:/app
-
-  # Profil GPU : docker compose --profile gpu run --rm features-gpu  (nécessite NVIDIA Container Toolkit)
-  features-gpu:
-    profiles: [gpu]
-    build:
-      context: .
-      target: runtime
-      args:
-        TORCH_VARIANT: cu121
-    image: brainscanai:gpu
-    command: python scripts/extract_features.py
-    volumes:
-      - ./data:/app/data
-      - ./reports:/app/reports
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
