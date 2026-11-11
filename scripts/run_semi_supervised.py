@@ -41,8 +41,10 @@ def main() -> None:
             run_cnn_experiment,  # import torch tardif
         )
 
-        cnn_summary, _ = run_cnn_experiment(df, X, cfg)
+        cnn_summary, _, cnn_diag = run_cnn_experiment(df, X, cfg)
         cnn_summary.to_csv(tdir / "semi_supervised_cnn.csv", index=False)
+        cnn_diag.to_csv(tdir / "cnn_diagnostics.csv", index=False)
+        log.info("Diagnostics par répétition :\n%s", cnn_diag.round(3))
         save_fig(plot_metric_comparison(cnn_summary, title="CNN : supervisé vs semi-supervisé"),
                  "compare_cnn", fdir)
         log.info("\n%s", cnn_summary[["approach", "recall_cancer_mean", "f1_mean", "roc_auc_mean"]].round(3))

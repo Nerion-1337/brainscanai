@@ -11,7 +11,7 @@
 | Plusieurs méthodes de clustering | notebook 03, `clustering/cluster.py` |
 | Justification de la semi-supervision | notebook 04 §A-B (avec vs sans labels partiels) |
 | Métriques pertinentes (F1, ROC...) | `evaluation/metrics.py`, justification dans README |
-| Hyperparamètres ajustés | notebook 04 §D, `configs/config.yaml` |
+| Hyperparamètres ajustés | notebook 04 §D, `scripts/run_ablation.py`, `docs/hyperparameters.md`, `configs/config.yaml` |
 | Support de présentation (4 M images, 5 000 EUR) | `docs/presentation_outline.md`, `reports/presentation/` |
 | Lien choix techniques ↔ contraintes métier | `scale_up/cost.py`, `reports/tables/scale_up_*.csv` |
 | Arguments pour la soutenance | `docs/presentation_outline.md` (section « questions probables ») |

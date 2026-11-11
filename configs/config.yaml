@@ -33,7 +33,7 @@ clustering:
   tsne_perplexity: 30
   dbscan_min_samples: 5
   selected_method: kmeans              # méthode utilisée pour la labellisation faible
-  keep_fraction: 0.8                   # part des pseudo-labels les plus confiants conservée
+  keep_fraction: 0.5                   # part des pseudo-labels les plus confiants conservée
 
 semi_supervised:
   n_repeats: 5                         # répétitions (splits/seed différents) -> moyenne ± écart-type
@@ -41,9 +41,11 @@ semi_supervised:
     arch: resnet18
     pretrained: true
     batch_size: 32
-    weak_stage: {epochs: 5, lr: 1.0e-4}
-    strong_stage: {epochs: 15, lr: 3.0e-5}
-    baseline: {epochs: 15, lr: 1.0e-4}
+    weak_stage: {epochs: 5, lr: 1.0e-4}        # A : entraînement sur labels faibles (clusters)
+    strong_stage: {epochs: 15, lr: 1.0e-4}     # B (fine-tuning) ET C (supervisé) : mêmes réglages = comparaison équitable
+    pseudo_stage: {epochs: 8, lr: 1.0e-4}      # D : entraînement conjoint labels forts + pseudo-labels du modèle
+    pseudo_threshold: 0.90                     # D : confiance minimale d'un pseudo-label
+    pseudo_max_images: 400                     # D : plafond (coût CPU), réparti entre les 2 classes
     weight_decay: 1.0e-4
     val_fraction: 0.2
     patience: 4
