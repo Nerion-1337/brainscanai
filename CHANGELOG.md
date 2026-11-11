@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.0]
+- Comparaison CNN équitable : B (faible→fort) et C (fort seul) partagent `strong_stage` (l'ancien lr 3e-5 de B le désavantageait) ; clé `baseline` supprimée.
+- Nouveau bras D : pseudo-labelling par le modèle (seuil de confiance, plafond, équilibre par classe).
+- Diagnostics par répétition (`cnn_diagnostics.csv` : précision des labels faibles, nb de pseudo-labels) ; `run_cnn_experiment` retourne désormais 3 valeurs.
+- `scripts/run_ablation.py` (keep_fraction) ; `keep_fraction` par défaut 0,5 ; `docs/hyperparameters.md`.
+
 ## [1.2.1]
 - Correctif : le service `jupyter` quittait immédiatement (Jupyter refuse de tourner en root) → `--allow-root`, jeton vide via `IdentityProvider`, port lié à 127.0.0.1.
 

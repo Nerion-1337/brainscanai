@@ -145,7 +145,7 @@ flowchart LR
 - Les labels « faibles » restent dans un jeu séparé du jeu « fort » et sont réintroduits avec un poids réduit ou en pré-entraînement.
 - Le test n'est jamais utilisé pour l'entraînement, le choix de seuil ou le mapping. Résultats moyennés sur **5 répétitions** (seeds/splits différents) car le test est petit (≈ 30 images).
 
-**Approches comparées** : régression logistique supervisée (référence), labels faibles seuls, faible + fort pondéré, *self-training* (pseudo-labelling à seuil de confiance), *Label Spreading*, *Label Propagation*, et CNN (ResNet18) **faible → fort** vs **fort seul**.
+**Approches comparées** : régression logistique supervisée (référence), labels faibles seuls, faible + fort pondéré, *self-training*, *Label Spreading*, *Label Propagation*, et quatre bras CNN (ResNet18) sur les mêmes splits : **A** faible seul, **B** faible → fort, **C** fort seul (mêmes hyperparamètres que B : comparaison équitable), **D** pseudo-labelling par le modèle. Réglages et diagnostics : [docs/hyperparameters.md](docs/hyperparameters.md) ; ablation : `scripts/run_ablation.py`.
 
 ## 📐 Diagrammes UML
 
