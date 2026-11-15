@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, normalize
 
 
 def standardize(X: np.ndarray) -> tuple[np.ndarray, StandardScaler]:
@@ -23,3 +23,19 @@ def tsne_embed(X: np.ndarray, perplexity: float = 30.0, seed: int = 42) -> np.nd
     perplexity = min(perplexity, max(2.0, (len(X) - 1) / 3))
     return TSNE(n_components=2, perplexity=perplexity, init="pca", learning_rate="auto",
                 random_state=seed).fit_transform(X)
+
+
+def prepare_clustering_space(X: np.ndarray, n_components: float | int = 50, l2_normalize: bool = True,
+                             seed: int = 42):
+    """Espace de travail unique du clustering : standardisation -> PCA -> (normalisation L2).
+
+    La normalisation L2 compare la *direction* des embeddings (géométrie cosinus) plutôt que leur norme,
+    qui reflète surtout l'intensité globale de l'image. Retourne ``(Z, pca)``.
+    """
+    Xs, _ = standardize(X)
+    if isinstance(n_components, int):
+        n_components = min(n_components, *Xs.shape)  # garde-fou : jeux petits / peu de dimensions
+    Z, pca = pca_reduce(Xs, n_components, seed)
+    if l2_normalize:
+        Z = normalize(Z)
+    return Z, pca

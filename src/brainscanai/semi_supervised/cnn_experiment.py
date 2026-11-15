@@ -19,7 +19,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from brainscanai.clustering.cluster import run_all
-from brainscanai.clustering.reduce import pca_reduce, standardize
+from brainscanai.clustering.reduce import prepare_clustering_space
 from brainscanai.data.split import ROLE_STRONG, ROLE_TEST, ROLE_WEAK, assign_roles
 from brainscanai.evaluation.metrics import compute_metrics, summarize_runs
 from brainscanai.semi_supervised.models import build_cnn
@@ -70,7 +70,7 @@ def run_cnn_experiment(df: pd.DataFrame, X: np.ndarray, cfg: dict, n_repeats: in
     """
     cnn, cc = cfg["semi_supervised"]["cnn"], cfg["clustering"]
     device = get_device(cfg["features"]["device"])
-    Z, _ = pca_reduce(standardize(X)[0], cc["pca_components"], cfg["seed"])
+    Z, _ = prepare_clustering_space(X, cc["pca_components"], cc.get("l2_normalize", True), cfg["seed"])
     runs = {a: [] for a in arms}
     diags, probs_last = [], {}
     for r in range(n_repeats or cfg["semi_supervised"]["n_repeats"]):

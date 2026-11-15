@@ -47,3 +47,14 @@ def test_weak_labels_use_only_weak_pool_and_strong_train_mapping():
     assert set(weak["image_id"]).isdisjoint(df.loc[df.role != "weak_pool", "image_id"])
     acc = (weak["weak_label"].to_numpy() == y[weak["image_id"].to_numpy()]).mean()
     assert acc > 0.95 and 0.7 < len(weak) / 260 < 0.9
+
+
+def test_prepare_clustering_space_l2_and_cap():
+    from brainscanai.clustering.reduce import prepare_clustering_space
+
+    X, _ = _blobs()                                   # 20 features
+    Z, _ = prepare_clustering_space(X, n_components=50, l2_normalize=True)   # 50 > 20 : plafonné
+    assert Z.shape == (300, 20)
+    assert np.allclose(np.linalg.norm(Z, axis=1), 1.0)
+    Z2, _ = prepare_clustering_space(X, n_components=5, l2_normalize=False)
+    assert Z2.shape == (300, 5) and not np.allclose(np.linalg.norm(Z2, axis=1), 1.0)

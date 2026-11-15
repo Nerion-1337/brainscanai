@@ -8,6 +8,7 @@
 | `pseudo_stage` | 8 epochs, lr 1e-4 | Étape D : entraînement conjoint labels forts + pseudo-labels (jeu plus grand, donc moins d'epochs) |
 | `pseudo_threshold` | 0,90 | D : un pseudo-label n'est retenu que si le modèle est sûr à ≥ 90 % |
 | `pseudo_max_images` | 400 | D : plafond (temps CPU), réparti à parts égales entre les deux classes |
+| `clustering.pca_components` / `l2_normalize` | 50 / true | Espace de clustering partagé (scripts + notebooks 03/04) : PCA à 50 dimensions puis normalisation L2. Dans nos essais, la L2 fait passer l'ARI de K-Means de ~0,22 à ~0,5-0,6 ; la PCA à 95 % (663 dims) ajoute surtout du bruit. Les ARI sur 100 images sont incertains (écart-type ~0,1) |
 | `clustering.keep_fraction` | 0,5 | A/B : on garde les 50 % de labels faibles les plus sûrs de chaque classe (qualité > quantité) |
 | `val_fraction` / `patience` | 0,2 / 4 | Arrêt anticipé : on arrête si la perte de validation ne s'améliore plus |
 

@@ -29,7 +29,8 @@ features:
 
 clustering:
   n_clusters: 2                        # = nombre de classes du jeu labellisé
-  pca_components: 0.95                 # variance expliquée conservée (ou entier)
+  pca_components: 50                   # entier = nb de dimensions ; flottant = variance conservée (0.95 -> 663 dims : trop)
+  l2_normalize: true                   # normalisation L2 après PCA : ARI 0,22 -> 0,5-0,6 dans nos essais (notebook 03)
   tsne_perplexity: 30
   dbscan_min_samples: 5
   selected_method: kmeans              # méthode utilisée pour la labellisation faible

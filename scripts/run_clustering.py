@@ -11,7 +11,7 @@ import pandas as pd  # noqa: E402
 
 from brainscanai.clustering.cluster import run_all  # noqa: E402
 from brainscanai.clustering.evaluate import evaluate_all  # noqa: E402
-from brainscanai.clustering.reduce import pca_reduce, standardize, tsne_embed  # noqa: E402
+from brainscanai.clustering.reduce import prepare_clustering_space, tsne_embed  # noqa: E402
 from brainscanai.config import load_config, resolve_path  # noqa: E402
 from brainscanai.evaluation.plots import plot_embedding_2d, save_fig  # noqa: E402
 from brainscanai.features.io import load_features  # noqa: E402
@@ -30,8 +30,7 @@ def main() -> None:
 
     manifest = pd.read_csv(resolve_path(cfg, "processed") / "manifest_clean.csv")
     X, m = load_features(resolve_path(cfg, "features") / "embeddings.npz", manifest)
-    Xs, _ = standardize(X)
-    Z, pca = pca_reduce(Xs, cc["pca_components"], cfg["seed"])
+    Z, pca = prepare_clustering_space(X, cc["pca_components"], cc.get("l2_normalize", True), cfg["seed"])
     log.info("PCA : %d -> %d dimensions (%.1f%% variance)", X.shape[1], Z.shape[1],
              100 * pca.explained_variance_ratio_.sum())
 

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from brainscanai.clustering.cluster import run_all
-from brainscanai.clustering.reduce import pca_reduce, standardize
+from brainscanai.clustering.reduce import prepare_clustering_space
 from brainscanai.data.split import ROLE_STRONG, ROLE_TEST, ROLE_WEAK, assign_roles
 from brainscanai.evaluation.metrics import compute_metrics, summarize_runs
 from brainscanai.semi_supervised import sklearn_methods as sm
@@ -19,7 +19,7 @@ def run_embedding_experiment(df: pd.DataFrame, X: np.ndarray, cfg: dict) -> tupl
     """
     cc, sc = cfg["clustering"], cfg["semi_supervised"]
     # Réduction non supervisée (aucun label utilisé) : appliquée à tout le monde.
-    Z, _ = pca_reduce(standardize(X)[0], cc["pca_components"], cfg["seed"])
+    Z, _ = prepare_clustering_space(X, cc["pca_components"], cc.get("l2_normalize", True), cfg["seed"])
     runs: dict[str, list] = {}
     last_probs: dict = {}
     for r in range(sc["n_repeats"]):

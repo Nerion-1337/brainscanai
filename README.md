@@ -543,12 +543,41 @@ L'accuracy est rapportée mais **jamais** utilisée seule. Le seuil de décision
 
 ## 📊 Résultats
 
-> Les résultats sur le jeu réel **ne sont pas encore produits** : le dépôt livre le pipeline, pas des chiffres inventés. Après exécution, reporter ici les tableaux générés dans `reports/tables/`.
+> Jeu de test : **30 images** (15 cancer, 15 normal), jamais vues à l'entraînement. Classe positive = cancer ; métrique principale = **rappel**. Moyennes sur les répétitions ; écart-type du rappel entre parenthèses. Un cancer de plus ou de moins dans le test fait varier le rappel de 6,7 points : les écarts inférieurs à un écart-type sont des tendances, pas des preuves.
+
+### Étapes amont
+
+| Étape | Résultat |
+|---|---|
+| Nettoyage | 1 506 images → **1 305** conservées (96 doublons, 124 aberrantes, dont 19 cumulent les deux) |
+| Espace de clustering | PCA 50 dimensions + normalisation L2 : ARI de K-Means **0,22 → 0,57** |
+| Clustering retenu | **K-Means, k = 2** : ARI 0,57, pureté 88 % (agglomératif : 0,48 ; GMM : 0,18 ; DBSCAN : 1 seul cluster) |
+| Labels faibles | Justesse **83 à 90 %** (mesurée sur le test), 50 % des plus sûrs conservés (≈ 600 images) |
+
+### Embeddings figés (ResNet50) - 5 répétitions
 
 | Approche | Rappel cancer | F1 | AUC-ROC |
 |---|---|---|---|
-| Supervisé (labels forts seuls) | _à compléter_ | _à compléter_ | _à compléter_ |
-| Semi-supervisé (meilleure approche) | _à compléter_ | _à compléter_ | _à compléter_ |
+| Supervisé (69 labels forts seuls) | 0,81 (0,05) | 0,83 | 0,92 |
+| **Semi-supervisé : faible + fort (pondéré)** | **0,89 (0,10)** | **0,90** | 0,95 |
+| Semi-supervisé : Label Spreading | 0,83 (0,08) | 0,90 | **0,96** |
+| Semi-supervisé : Self-training | 0,88 (0,03) | 0,88 | 0,93 |
+
+### CNN ResNet18 réajusté - 2 répétitions (provisoire)
+
+| Approche | Rappel cancer | F1 | AUC-ROC |
+|---|---|---|---|
+| **C : supervisé (69 labels forts seuls)** | **0,93** | **0,92** | **0,99** |
+| D : semi-supervisé, pseudo-labels du modèle | 0,90 | 0,92 | 0,97 |
+| B : semi-supervisé, labels faibles puis forts | 0,73 | 0,81 | 0,94 |
+| A : labels faibles seuls | 0,67 | 0,77 | 0,92 |
+
+### Conclusion
+
+- **Sur embeddings figés**, le semi-supervisé améliore modestement la référence (+8 points de rappel, +7 de F1, +3 d'AUC pour « faible + fort ») : tendance favorable, non démontrée.
+- **Sur CNN réajusté**, le supervisé domine ; les pseudo-labels du modèle (D) l'égalent sans le dépasser, et le pré-entraînement sur labels faibles (A, B) dégrade les résultats (le réseau mémorise leurs 10 à 17 % d'erreurs).
+- **Definition of done** : atteinte sur embeddings (rappel et F1 ≥ supervisé, AUC ≥ 0,85), non atteinte sur CNN. Détails : [docs/definition_of_done.md](docs/definition_of_done.md).
+- **Limites** : 100 labels, test de 30 images, CNN sur 2 répétitions, fuite possible entre coupes proches (non vérifiée). Voir le document de synthèse.
 
 ## ✅ Tests et qualité
 
